@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Daily – Lern-Assistent</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0d1117;--ink-soft:#5a6475;--paper:#f5f6f8;--card:#ffffff;--line:#e4e6ea;
+  --accent:#00897b;--accent-light:#e0f2f1;--ok:#2e7d32;--ok-light:#e8f5e9;
+  --err:#c62828;--err-light:#ffebee;
+  --mono:'IBM Plex Mono',monospace;--sans:'Inter',system-ui,sans-serif;
+}
+html{font-size:16px;overflow-x:hidden}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;overflow-x:hidden}
+nav{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.nav-inner{max-width:720px;margin:0 auto;padding:0 12px;display:flex;align-items:center;height:52px;gap:0}
+.nav-logo{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--ink);margin-right:auto;display:flex;align-items:center;gap:7px;min-width:0;flex-shrink:1}
+.nav-logo .day-badge{font-family:var(--mono);font-size:11px;background:var(--ink);color:#fff;padding:2px 7px;border-radius:5px;flex-shrink:0}
+.mode-badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.04em;flex-shrink:0}
+.mode-badge.mock{background:#fff3cd;color:#856404;border:1px solid #ffc107}
+.mode-badge.api{background:#d4edda;color:#155724;border:1px solid #28a745}
+.nav-tabs{display:flex;height:100%;flex-shrink:0}
+.tab-btn{background:none;border:none;border-bottom:2px solid transparent;padding:0 10px;font-family:var(--sans);font-size:13px;font-weight:600;color:var(--ink-soft);cursor:pointer;transition:color .15s,border-color .15s;white-space:nowrap}
+.tab-btn:hover{color:var(--ink)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+@media(max-width:400px){
+  .mode-badge{display:none}
+  .tab-btn{padding:0 8px;font-size:12px}
+  .nav-logo{font-size:13px}
+}
+.page{display:none;max-width:720px;margin:0 auto;padding:32px 20px 80px}
+.page.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:16px}
+.card-label{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px}
+.card-title{font-family:var(--mono);font-size:26px;font-weight:700;line-height:1.15}
+.card-title .cursor{display:inline-block;width:3px;height:1.1em;background:var(--accent);margin-left:4px;vertical-align:middle;animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.card-full{font-size:14px;color:var(--ink-soft);margin-top:4px}
+.cat-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;margin-top:12px}
+.cat-chip .dot{width:8px;height:8px;border-radius:50%}
+.section-text{font-size:15px;line-height:1.65;color:var(--ink)}
+.merksatz{font-size:15px;font-style:italic;border-left:3px solid var(--accent);padding-left:14px;color:var(--ink);line-height:1.55}
+.start-box{text-align:center;padding:60px 20px}
+.start-day{font-family:var(--mono);font-size:72px;font-weight:700;line-height:1;color:var(--ink)}
+.start-day span{font-size:18px;font-weight:400;display:block;color:var(--ink-soft);margin-top:4px}
+.start-cat{font-size:14px;color:var(--ink-soft);margin:20px 0 32px}
+.start-cat strong{color:var(--ink)}
+.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:12px;padding:15px 32px;font-family:var(--sans);font-size:16px;font-weight:700;cursor:pointer;transition:background .15s,transform .1s}
+.btn-primary:hover{background:#00796b}
+.btn-primary:active{transform:scale(.98)}
+.btn-primary:disabled{background:var(--line);color:var(--ink-soft);cursor:not-allowed}
+.quiz-options{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.quiz-opt{background:var(--paper);border:1.5px solid var(--line);border-radius:10px;padding:14px 16px;font-size:15px;font-family:var(--sans);cursor:pointer;text-align:left;color:var(--ink);transition:border-color .15s,background .15s}
+.quiz-opt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-light)}
+.quiz-opt.correct{background:var(--ok-light);border-color:var(--ok);color:var(--ok);font-weight:600}
+.quiz-opt.wrong{background:var(--err-light);border-color:var(--err);color:var(--err)}
+.quiz-opt.dimmed{opacity:.45}
+.quiz-opt:disabled{cursor:default}
+.quiz-feedback{margin-top:14px;padding:12px 16px;border-radius:10px;font-size:14px;line-height:1.55}
+.quiz-feedback.ok{background:var(--ok-light);color:var(--ok);border:1px solid #a5d6a7}
+.quiz-feedback.err{background:var(--err-light);color:var(--err);border:1px solid #ef9a9a}
+.weiter-wrap{margin-top:20px;text-align:center}
+.btn-weiter{background:var(--ink);color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:15px;font-weight:700;font-family:var(--sans);cursor:pointer}
+.btn-weiter:hover{background:#1f2530}
+.loading{display:flex;align-items:center;gap:12px;color:var(--ink-soft);font-size:15px;padding:40px 0;justify-content:center}
+.spinner{width:20px;height:20px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.glos-controls{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.glos-search{flex:1 1 200px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:var(--sans);color:var(--ink);background:var(--card)}
+.glos-search:focus{outline:2px solid var(--accent)}
+.glos-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.glos-chip{padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:12px;font-weight:600;cursor:pointer;color:var(--ink-soft);display:flex;align-items:center;gap:6px}
+.glos-chip.on{border-color:var(--ink);color:var(--ink)}
+.glos-chip.all-on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.gterm{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--cat-color,#999);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.gterm-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.gterm-name{font-family:var(--mono);font-size:16px;font-weight:700}
+.gterm-full{font-size:13px;color:var(--ink-soft)}
+.gterm-def{font-size:14px;line-height:1.55;margin-top:8px}
+.gterm-merk{font-size:13px;font-style:italic;color:var(--ink-soft);margin-top:6px}
+.gterm-day{font-family:var(--mono);font-size:11px;color:var(--ink-soft);flex-shrink:0}
+.glos-empty{text-align:center;color:var(--ink-soft);padding:50px 0}
+.settings-group{margin-bottom:16px}
+.settings-label{font-size:13px;font-weight:700;letter-spacing:.03em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:10px}
+.settings-input{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:var(--mono);color:var(--ink);background:var(--card)}
+.settings-input:focus{outline:2px solid var(--accent)}
+.settings-hint{font-size:13px;color:var(--ink-soft);margin-top:7px;line-height:1.5}
+.settings-warn{font-size:13px;color:#856404;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 13px;margin-top:10px;line-height:1.5}
+.settings-row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.btn-secondary{background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:10px 18px;font-size:14px;font-weight:600;font-family:var(--sans);cursor:pointer}
+.btn-secondary:hover{border-color:var(--ink)}
+.btn-danger{background:#fff3f3;color:#c62828;border:1.5px solid #f7c4c4;border-radius:10px;padding:10px 18px;font-size:14px;font-weight:600;font-family:var(--sans);cursor:pointer}
+.btn-danger:hover{background:var(--err-light)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
+.toggle{position:relative;width:44px;height:24px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--line);border-radius:12px;transition:.2s;cursor:pointer}
+.toggle input:checked+.toggle-slider{background:var(--accent)}
+.toggle-slider::before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px)}
+.stat-row{display:flex;gap:24px;margin-bottom:8px}
+.stat{background:var(--paper);border-radius:10px;padding:14px 18px;flex:1;text-align:center}
+.stat b{font-family:var(--mono);font-size:28px;font-weight:700;display:block}
+.stat span{font-size:12px;color:var(--ink-soft)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;z-index:100;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.progress-bar-wrap{background:var(--line);border-radius:999px;height:6px;margin:8px 0 4px}
+.progress-bar{background:var(--accent);height:6px;border-radius:999px;transition:width .4s ease}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">
+      IT Daily
+      <span class="day-badge" id="nav-day">Tag 1</span>
+      <span class="mode-badge mock" id="mode-badge">MOCK</span>
+    </div>
+    <div class="nav-tabs">
+      <button class="tab-btn active" data-tab="briefing">Briefing</button>
+      <button class="tab-btn" data-tab="glossar">Glossar</button>
+      <button class="tab-btn" data-tab="settings">Einstellungen</button>
+    </div>
+  </div>
+</nav>
+<div id="page-briefing" class="page active"></div>
+<div id="page-glossar" class="page"></div>
+<div id="page-settings" class="page"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const CATEGORIES = ["Netzwerke","Betriebssysteme","Sicherheit","Hardware","Cloud & Infrastruktur","Programmierung & Logik","Datenverwaltung"];
+const CAT_COLORS = {
+  "Netzwerke":"#2f6f6a","Betriebssysteme":"#c2731c","Sicherheit":"#b23b4e",
+  "Hardware":"#4a5bbf","Cloud & Infrastruktur":"#1f8aa8",
+  "Programmierung & Logik":"#7a4bbf","Datenverwaltung":"#3a8f4e"
+};
+const STORAGE_KEY = "it_daily_v2";
+
+// ═══════════════════════════════════════════════════════════
+// MOCK DATA  –  3 Runden × 7 Kategorien = 21 Briefings
+// Struktur identisch mit dem API-Response-Schema
+// ═══════════════════════════════════════════════════════════
+const MOCKS = {
+  "Netzwerke": [
+    {
+      topic:"DNS",full:"Domain Name System",category:"Netzwerke",
+      definition:"DNS übersetzt menschenlesbare Domainnamen wie anthropic.com in IP-Adressen, die Computer zur Kommunikation brauchen. Es funktioniert als verteiltes, hierarchisches System aus Millionen Servern. Ohne DNS müsstest du jede Website mit ihrer numerischen IP-Adresse aufrufen.",
+      explanation:"Stell dir DNS wie ein Telefonbuch vor: Du kennst den Namen (anthropic.com), aber dein Telefon braucht die Nummer (93.184.216.34). Tippst du eine URL ein, fragt dein Browser den DNS-Resolver deines Internetanbieters. Der fragt weiter bis er die IP-Adresse findet – das alles in Millisekunden.",
+      example:"Du tippst 'github.com' in den Browser. Dein OS prüft zuerst seinen lokalen Cache. Falls leer, geht eine Anfrage an den DNS-Server deines Routers, der beim öffentlichen Resolver 8.8.8.8 nachfragt. Ergebnis: IP-Adresse 140.82.121.4 – Verbindung wird aufgebaut.",
+      quiz:{question:"Was gibt ein DNS-Server als Antwort zurück?",options:["A) Den Inhalt der aufgerufenen Website","B) Die IP-Adresse zum angefragten Domainnamen","C) Das SSL-Zertifikat der Domain"],correct:1,feedback:"DNS liefert ausschließlich die Zuordnung Name → IP-Adresse. Den Inhalt liefert danach erst der Webserver selbst."},
+      merksatz:"DNS ist das Telefonbuch des Internets – es übersetzt Namen in Nummern.",
+      glossary_terms:[{term:"DNS",full:"Domain Name System",def:"Übersetzt Domainnamen in IP-Adressen.",merk:"Das Telefonbuch des Internets."},{term:"IP-Adresse",full:"Internet Protocol Address",def:"Numerische Adresse eines Geräts im Netzwerk, z. B. 93.184.216.34.",merk:null},{term:"DNS-Resolver",full:null,def:"Server, der DNS-Anfragen stellvertretend für Clients beantwortet.",merk:null}]
+    },
+    {
+      topic:"DHCP",full:"Dynamic Host Configuration Protocol",category:"Netzwerke",
+      definition:"DHCP vergibt automatisch IP-Adressen an Geräte, die sich ins Netzwerk einwählen. Ohne DHCP müsste jede Netzwerkkonfiguration manuell eingetragen werden. Es ist der Grund, warum dein Laptop sofort ins WLAN kommt.",
+      explanation:"Stell dir DHCP wie eine Hotelrezeption vor: Du kommst an, die Rezeption weist dir ein Zimmer zu (IP-Adresse) für einen bestimmten Zeitraum (Lease-Time). Gehst du wieder, wird das Zimmer freigegeben. Der Prozess läuft in vier Schritten ab: Discover → Offer → Request → Acknowledge (DORA).",
+      example:"Du bringst deinen Laptop ins Büro und verbindest dich mit dem WLAN. Dein Laptop sendet einen DHCP-Discover-Broadcast. Der Router antwortet mit einer freien IP wie 192.168.1.45, Gateway und DNS-Server. Dein Laptop bestätigt, der Router quittiert. Alles in unter einer Sekunde.",
+      quiz:{question:"Welche vier Schritte beschreiben den DHCP-Prozess (DORA)?",options:["A) Connect, Send, Receive, Disconnect","B) Discover, Offer, Request, Acknowledge","C) Login, Assign, Confirm, Release"],correct:1,feedback:"DORA ist die Merkformel für den DHCP-Ablauf. Alle vier Schritte passieren automatisch beim Verbinden mit einem Netzwerk."},
+      merksatz:"DHCP = automatische IP-Vergabe – kein manuelles Konfigurieren jedes Geräts.",
+      glossary_terms:[{term:"DHCP",full:"Dynamic Host Configuration Protocol",def:"Vergibt automatisch IP-Adressen und Netzwerkkonfiguration an Geräte.",merk:"Die Hotelrezeption des Netzwerks."},{term:"Lease-Time",full:null,def:"Zeitraum, für den eine per DHCP vergebene IP-Adresse gültig ist.",merk:null},{term:"DORA",full:"Discover, Offer, Request, Acknowledge",def:"Die vier Schritte des DHCP-Handshakes.",merk:null}]
+    },
+    {
+      topic:"VPN",full:"Virtual Private Network",category:"Netzwerke",
+      definition:"Ein VPN verschlüsselt deine Internetverbindung und leitet sie über einen Server an einem anderen Ort. Für Webseiten siehst du aus, als kämst du vom VPN-Server. Unternehmen nutzen VPNs, um Mitarbeitern sicheren Fernzugang zum internen Netz zu ermöglichen.",
+      explanation:"Stell dir das Internet als offene Postkarte vor – jeder Zwischenknoten kann mitlesen. Ein VPN ist der verschlossene Umschlag: Dein Gerät verschlüsselt alles, schickt es zum VPN-Server, der entschlüsselt und weiterleitet. Dein Internetanbieter sieht nur 'Verbindung zum VPN-Server' – nicht was du tust.",
+      example:"Ein Entwickler arbeitet im Homeoffice und braucht Zugang zur internen Entwicklungsdatenbank, die nur im Firmennetz erreichbar ist. Er verbindet sich per VPN-Client. Sein Laptop verhält sich jetzt so, als säße er im Büro. Die Datenbankverbindung funktioniert – verschlüsselt durch den Tunnel.",
+      quiz:{question:"Was ist der Hauptnutzen eines Business-VPN?",options:["A) Schnelleres Internet","B) Sicherer Fernzugang zum internen Unternehmensnetz","C) Günstigere Streaming-Abo-Preise"],correct:1,feedback:"Business-VPNs dienen primär dem sicheren Fernzugang, nicht der Geschwindigkeit oder Geo-Umgehung. Der verschlüsselte Tunnel schützt sensible Firmendaten."},
+      merksatz:"VPN = verschlüsselter Tunnel – von außen surfen, als wärst du im Firmennetz.",
+      glossary_terms:[{term:"VPN",full:"Virtual Private Network",def:"Verschlüsselte Verbindung, die sicheren Fernzugang zum internen Netz ermöglicht.",merk:"Der verschlossene Umschlag im offenen Internet."},{term:"VPN-Tunnel",full:null,def:"Verschlüsselte Datenverbindung zwischen Client und VPN-Server.",merk:null}]
+    }
+  ],
+  "Betriebssysteme": [
+    {
+      topic:"Prozesse",full:null,category:"Betriebssysteme",
+      definition:"Ein Prozess ist ein laufendes Programm im Arbeitsspeicher – inklusive Code, Daten und aktuellem Zustand. Das Betriebssystem verwaltet alle Prozesse und entscheidet, wer wie viel CPU-Zeit bekommt. Jeder Prozess läuft isoliert und kann andere nicht direkt beeinflussen.",
+      explanation:"Stell dir das OS als Küchenchef vor, der mehrere Köche (Prozesse) koordiniert. Jeder Koch hat seinen eigenen Arbeitsbereich und darf nicht in den anderen greifen. Der Scheduler wechselt so schnell zwischen Köchen, dass es sich anfühlt als würden alle gleichzeitig kochen – selbst mit nur einer CPU.",
+      example:"Du öffnest Chrome, Word und Spotify gleichzeitig. Jede App ist ein eigener Prozess. Im Task-Manager siehst du, wie viel RAM und CPU jeder belegt. Hängt ein Tab – kannst du gezielt nur diesen Prozess beenden, ohne den ganzen Browser zu schließen.",
+      quiz:{question:"Warum laufen Prozesse isoliert voneinander?",options:["A) Damit sie sich nicht gegenseitig stören oder korrumpieren können","B) Weil jeder Prozess eine eigene CPU benötigt","C) Weil das Betriebssystem sonst abstürzt"],correct:0,feedback:"Prozess-Isolation ist ein zentrales Sicherheitsprinzip. Ein fehlerhafter oder bösartiger Prozess kann so keine anderen beschädigen."},
+      merksatz:"Ein Prozess ist ein laufendes Programm mit eigenem Speicherbereich – isoliert und vom OS verwaltet.",
+      glossary_terms:[{term:"Prozess",full:null,def:"Ein laufendes Programm im Arbeitsspeicher mit eigenem Zustand und Ressourcen.",merk:"Jeder Tab, jede App – ein eigener Prozess."},{term:"Scheduler",full:null,def:"Komponente des Betriebssystems, die CPU-Zeit auf Prozesse verteilt.",merk:null}]
+    },
+    {
+      topic:"Dateisystem",full:null,category:"Betriebssysteme",
+      definition:"Ein Dateisystem regelt, wie Daten auf einem Speichermedium organisiert, gespeichert und gefunden werden. Es ist die unsichtbare Struktur hinter Ordnern und Dateien. Windows nutzt NTFS, Linux ext4, macOS APFS.",
+      explanation:"Stell dir einen riesigen Schrank ohne Fächer vor – das wäre Speicher ohne Dateisystem. Das Dateisystem baut die Fächer (Ordner), beschriftet sie (Dateinamen) und führt ein Inhaltsverzeichnis, wo genau jede Datei physisch liegt. Ohne dieses Verzeichnis wäre die Suche wie ein Zettel in einem 1-TB-Heuhaufen.",
+      example:"Du speicherst 'bericht.docx' in C:\\Projekte\\2024\\. NTFS erzeugt einen Eintrag in der Master File Table mit Name, Größe, Datum und den genauen Sektoren auf der SSD. Löschst du die Datei, wird nur der Eintrag entfernt – die Daten bleiben kurz noch physisch da. Daher können gelöschte Dateien oft wiederhergestellt werden.",
+      quiz:{question:"Was passiert beim Löschen einer Datei auf den meisten Dateisystemen?",options:["A) Die Daten werden sofort physisch überschrieben","B) Nur der Verzeichniseintrag wird entfernt, Daten bleiben noch auf dem Speicher","C) Die Datei wird in die Cloud verschoben"],correct:1,feedback:"Das ist auch der Grund, warum Datenwiederherstellungs-Tools funktionieren: Die eigentlichen Daten werden erst überschrieben, wenn der Platz neu gebraucht wird."},
+      merksatz:"Das Dateisystem ist das Inhaltsverzeichnis deines Speichers – ohne es wären Daten ungeordnetes Rauschen.",
+      glossary_terms:[{term:"Dateisystem",full:null,def:"Struktursystem zur Organisation und Verwaltung von Daten auf Speichermedien.",merk:"Das Inhaltsverzeichnis des Speichers."},{term:"NTFS",full:"New Technology File System",def:"Standard-Dateisystem von Windows mit Unterstützung für Berechtigungen und Journaling.",merk:null},{term:"Master File Table",full:"MFT",def:"Zentrale Tabelle in NTFS, die Metadaten zu jeder Datei und jedem Ordner speichert.",merk:null}]
+    },
+    {
+      topic:"Berechtigungen",full:"Dateiberechtigungen & Rechteverwaltung",category:"Betriebssysteme",
+      definition:"Berechtigungen regeln, wer auf Dateien oder Ordner zugreifen, sie ändern oder ausführen darf. Jedes OS kennt mindestens Lesen (r), Schreiben (w) und Ausführen (x). Berechtigungen sind ein Grundpfeiler der Systemsicherheit.",
+      explanation:"Linux unterscheidet drei Ebenen: Besitzer, Gruppe, Alle anderen. Für jede Ebene gibt es r/w/x. chmod 755 bedeutet: Besitzer darf alles (7=rwx), Gruppe und andere dürfen lesen und ausführen (5=r-x). Windows nutzt ACLs mit feinerer Granularität – aber das Prinzip ist dasselbe: Wer darf was?",
+      example:"Ein Webserver-Skript liegt mit Berechtigungen 644 (rw-r--r--) auf dem Server. Der Webserver kann lesen, aber nicht ändern. Ein Admin setzt versehentlich 777 – jetzt darf jeder Prozess die Datei ändern. Ein Angreifer mit minimalem Zugang könnte Schadcode einschleusen. Falsche Berechtigungen = offene Tür.",
+      quiz:{question:"Was bedeutet chmod 644 für eine Datei?",options:["A) Besitzer darf lesen und schreiben, alle anderen nur lesen","B) Alle dürfen lesen, schreiben und ausführen","C) Nur der Besitzer darf lesen"],correct:0,feedback:"6 = rw- (lesen+schreiben), 4 = r-- (nur lesen). Der Besitzer kann also schreiben, alle anderen nur lesen. Das ist für Konfigurationsdateien typisch."},
+      merksatz:"Minimalprinzip bei Berechtigungen: Jeder bekommt nur so viel Zugang wie nötig.",
+      glossary_terms:[{term:"chmod",full:"Change Mode",def:"Linux-Befehl zum Setzen von Dateiberechtigungen.",merk:null},{term:"ACL",full:"Access Control List",def:"Feingranulare Rechteverwaltung unter Windows, die Zugriff pro Nutzer und Gruppe definiert.",merk:null},{term:"Minimalprinzip",full:"Principle of Least Privilege",def:"Sicherheitsprinzip: Jeder Nutzer und Prozess bekommt nur die minimal nötigen Rechte.",merk:null}]
+    }
+  ],
+  "Sicherheit": [
+    {
+      topic:"2FA",full:"Zwei-Faktor-Authentifizierung",category:"Sicherheit",
+      definition:"2FA schützt Konten durch zwei unabhängige Nachweise: typischerweise Passwort plus Einmalcode. Selbst wenn ein Angreifer dein Passwort kennt, kommt er ohne den zweiten Faktor nicht rein. Es ist einer der wirksamsten Schutzmechanismen gegen Kontenübernahmen.",
+      explanation:"Drei Faktorfamilien: Wissen (Passwort), Besitz (Handy, Hardware-Key), Eigenschaft (Fingerabdruck). 2FA kombiniert mindestens zwei. Stell dir deinen Account als Tresor mit zwei Schlössern vor: Schloss 1 kann geknackt werden – Schloss 2 (dein Handy) hat der Angreifer nicht dabei.",
+      example:"Du loggst dich bei GitHub ein. Nach dem Passwort fragt GitHub nach einem 6-stelligen Code, den eine Authenticator-App alle 30 Sekunden neu generiert. Der Code basiert auf einem gemeinsamen Geheimnis und der aktuellen Uhrzeit (TOTP). Ohne dein Handy ist er wertlos.",
+      quiz:{question:"Was schützt 2FA hauptsächlich?",options:["A) Vor schwachen Passwörtern","B) Vor dem Missbrauch eines gestohlenen Passworts","C) Vor Viren auf dem eigenen Gerät"],correct:1,feedback:"2FA greift genau dann, wenn das Passwort bereits kompromittiert ist. Der zweite Faktor blockiert den Angreifer trotz richtigem Passwort."},
+      merksatz:"2FA: Auch mit deinem Passwort kommt niemand rein, der dein Handy nicht hat.",
+      glossary_terms:[{term:"2FA",full:"Zwei-Faktor-Authentifizierung",def:"Login-Schutz durch zwei unabhängige Nachweise.",merk:"Zwei Schlösser sind besser als eines."},{term:"TOTP",full:"Time-based One-Time Password",def:"Einmaliger Code, der alle 30 Sekunden aus Geheimnis + Uhrzeit berechnet wird.",merk:null},{term:"Authenticator-App",full:null,def:"App, die zeitbasierte Einmal-Codes für 2FA generiert (z. B. Google Authenticator).",merk:null}]
+    },
+    {
+      topic:"Phishing",full:null,category:"Sicherheit",
+      definition:"Phishing ist ein Angriff, bei dem Angreifer echte Absender oder Websites imitieren, um Zugangsdaten zu stehlen. Es ist die häufigste Einstiegsmethode bei Cyberangriffen. Die meisten erfolgreichen Hacks beginnen nicht mit technischen Exploits, sondern mit einer Phishing-Mail.",
+      explanation:"Phishing nutzt psychologischen Druck statt technischer Lücken. Klassische Trigger: Dringlichkeit ('Ihr Account wird gesperrt'), Autorität ('IT-Abteilung: Passwort ändern'), Angst ('Verdächtige Aktivität erkannt'). Der Link führt zu einer täuschend echten Kopie der echten Seite. Wer seine Daten eingibt, schickt sie direkt zum Angreifer.",
+      example:"Ein Mitarbeiter erhält eine Mail von it-support@firma-intern.co (echter Absender hat ein 'o' statt 'om' – ein Buchstabe Unterschied). Link führt zu login.firma-intern.co/reset – visuell identisch mit dem echten Portal. Mitarbeiter gibt Credentials ein. Angreifer hat Zugang.",
+      quiz:{question:"Welches Merkmal ist der zuverlässigste Check gegen Phishing?",options:["A) Ob die Mail ein offizielles Logo enthält","B) Die genaue Domain-Adresse des Links prüfen","C) Ob die Mail auf Deutsch geschrieben ist"],correct:1,feedback:"Logos und Sprache können einfach kopiert werden. Die Domain ist das einzige, was ein Angreifer nicht täuschend echt imitieren kann – sie muss sich minimal unterscheiden."},
+      merksatz:"Phishing überlistet Menschen, nicht Technik – immer die Domain prüfen, nie die Optik.",
+      glossary_terms:[{term:"Phishing",full:null,def:"Angriff durch gefälschte Mails oder Websites zur Entwendung von Zugangsdaten.",merk:"Domain prüfen, nicht das Logo."},{term:"Social Engineering",full:null,def:"Manipulation von Menschen statt Systemen, um an Informationen zu gelangen.",merk:null}]
+    },
+    {
+      topic:"Verschlüsselung",full:null,category:"Sicherheit",
+      definition:"Verschlüsselung wandelt lesbare Daten (Klartext) mit einem mathematischen Algorithmus in unlesbaren Geheimtext um. Nur wer den passenden Schlüssel hat, kann entschlüsseln. Sie ist die Grundlage sicherer Kommunikation im Internet.",
+      explanation:"Zwei Haupttypen: Symmetrisch (AES) – beide Seiten nutzen denselben Schlüssel, sehr schnell. Asymmetrisch (RSA) – ein öffentlicher Schlüssel verschlüsselt, nur der private entschlüsselt. HTTPS kombiniert beides: asymmetrisch für den Schlüsselaustausch, dann AES für die eigentliche Übertragung.",
+      example:"Du öffnest dein Online-Banking. Browser und Server führen einen TLS-Handshake durch: Sie einigen sich per asymmetrischer Verschlüsselung auf einen Session-Key. Ab da läuft alles mit AES-256 verschlüsselt. Das Schloss-Symbol im Browser zeigt: Niemand kann mitlesen – nicht mal dein Internetanbieter.",
+      quiz:{question:"Welches Verfahren nutzt zwei verschiedene Schlüssel?",options:["A) Symmetrische Verschlüsselung (AES)","B) Asymmetrische Verschlüsselung (RSA)","C) Hashing (SHA-256)"],correct:1,feedback:"Asymmetrische Kryptographie nutzt ein Schlüsselpaar: Der Public Key ist für alle sichtbar und verschlüsselt. Der Private Key bleibt geheim und entschlüsselt. Hashing ist übrigens keine Verschlüsselung – es ist eine Einwegfunktion."},
+      merksatz:"Verschlüsselung = mathematisches Schloss – nur wer den Schlüssel hat, kann öffnen.",
+      glossary_terms:[{term:"Verschlüsselung",full:null,def:"Umwandlung von Klartext in unlesbaren Geheimtext mittels mathematischem Schlüssel.",merk:"Mathematisches Schloss für Daten."},{term:"AES",full:"Advanced Encryption Standard",def:"Symmetrischer Verschlüsselungsstandard, sehr schnell, weit verbreitet (z. B. AES-256).",merk:null},{term:"TLS",full:"Transport Layer Security",def:"Protokoll zur verschlüsselten Datenübertragung im Internet (Nachfolger von SSL).",merk:null},{term:"RSA",full:"Rivest–Shamir–Adleman",def:"Weit verbreitetes asymmetrisches Verschlüsselungsverfahren mit Schlüsselpaar.",merk:null}]
+    }
+  ],
+  "Hardware": [
+    {
+      topic:"SSD",full:"Solid State Drive",category:"Hardware",
+      definition:"Eine SSD ist ein Datenspeicher ohne bewegliche Teile, der Daten in Flash-Chips ablegt. Sie ist deutlich schneller, robuster und leiser als eine klassische Festplatte (HDD). SSDs sind heute Standard in Laptops, Desktops und Servern.",
+      explanation:"Eine HDD liest Daten, indem ein Lesekopf über rotierende Scheiben fährt – wie eine Schallplattennadel. Eine SSD hat keine Scheiben: Daten werden elektrisch gespeichert, ähnlich einem USB-Stick. Zugriffszeiten unter 0,1 ms statt 5–10 ms. Dein OS startet in Sekunden statt Minuten.",
+      example:"Ein Entwickler tauscht die HDD gegen eine SSD. Boot-Zeit: von 75 auf 9 Sekunden. VS Code öffnet in 1 statt 8 Sekunden. Kompilieren eines Projekts halbiert sich, weil Laden und Schreiben von Dateien kein Flaschenhals mehr ist.",
+      quiz:{question:"Warum ist eine SSD schneller als eine HDD?",options:["A) Sie dreht sich schneller","B) Sie hat keine beweglichen Teile und greift elektrisch auf Daten zu","C) Sie hat mehr Speicherplatz"],correct:1,feedback:"Keine mechanischen Bewegungen = keine Wartezeit auf Positionierung. SSDs liefern Daten in Mikrosekunden, unabhängig davon, wo auf dem Speicher sie liegen (Random Access)."},
+      merksatz:"SSD = kein Motor, kein Kopf, kein Warten – Daten fließen elektrisch.",
+      glossary_terms:[{term:"SSD",full:"Solid State Drive",def:"Flash-basierter Datenspeicher ohne bewegliche Teile, deutlich schneller als HDD.",merk:"Kein Motor, kein Warten."},{term:"HDD",full:"Hard Disk Drive",def:"Klassische Festplatte mit rotierenden Scheiben und mechanischem Lesekopf.",merk:null},{term:"Flash-Speicher",full:null,def:"Elektronischer Speicher ohne Stromzufuhr (z. B. in SSDs, USB-Sticks).",merk:null}]
+    },
+    {
+      topic:"RAM",full:"Random Access Memory",category:"Hardware",
+      definition:"RAM ist der flüchtige Arbeitsspeicher – der schnelle Zwischenspeicher für alle aktiven Programme und Daten. Alles, womit du gerade arbeitest, liegt im RAM. Beim Ausschalten ist alles verloren.",
+      explanation:"Stell dir RAM als Schreibtisch vor: Je größer der Tisch, desto mehr Dokumente (Programme) kannst du gleichzeitig aufhaben, ohne ständig im Aktenschrank (SSD) nachschauen zu müssen. Zu wenig RAM → das OS lagert Daten auf die SSD aus (Swap) → alles ruckelt.",
+      example:"Du hast 8 GB RAM. Chrome mit 20 Tabs belegt 3 GB, dein Video-Editor 4 GB. Das System beginnt, weniger genutzte Daten auf die SSD auszulagern. Alles ruckelt. Mit 16 GB laufen beide Anwendungen flüssig, weil alles im schnellen Arbeitsspeicher bleibt.",
+      quiz:{question:"Was unterscheidet RAM von einer SSD?",options:["A) RAM ist langsamer aber günstiger","B) RAM ist flüchtig und viel schneller, verliert Daten beim Ausschalten","C) RAM hat mehr Speicherplatz"],correct:1,feedback:"RAM ist typischerweise 10-100× schneller als eine SSD, speichert aber nichts dauerhaft. SSD-Daten überleben den Neustart, RAM-Inhalte nicht."},
+      merksatz:"RAM ist der Schreibtisch der CPU – je größer, desto mehr läuft gleichzeitig flüssig.",
+      glossary_terms:[{term:"RAM",full:"Random Access Memory",def:"Flüchtiger, schneller Arbeitsspeicher für aktive Programme und Daten.",merk:"Der Schreibtisch der CPU."},{term:"Swap",full:null,def:"Auslagern von RAM-Inhalten auf die SSD wenn der Arbeitsspeicher voll ist – langsam.",merk:null}]
+    },
+    {
+      topic:"CPU",full:"Central Processing Unit",category:"Hardware",
+      definition:"Die CPU ist der Hauptprozessor – das Gehirn des Computers, das alle Berechnungen ausführt. Sie verarbeitet Befehle aus Programmen und koordiniert alle anderen Komponenten. Ohne CPU läuft kein Programm.",
+      explanation:"Eine CPU arbeitet im Taktzyklus: Befehl holen → dekodieren → ausführen → Ergebnis speichern. Mit 3 GHz macht sie das 3 Milliarden Mal pro Sekunde. Moderne CPUs haben mehrere Kerne – jeder rechnet unabhängig. Der Cache (L1/L2/L3) ist ultraschneller Zwischenspeicher direkt auf dem Chip.",
+      example:"Du renderst ein Video. Das Schnittprogramm verteilt die Arbeit auf alle 8 CPU-Kerne – jeder berechnet gleichzeitig einen anderen Abschnitt. Single-Core würde 40 Minuten brauchen, 8 Kerne schaffen es in ca. 6. Eine GPU könnte es nochmals massiv beschleunigen.",
+      quiz:{question:"Was beschreibt die Einheit 'GHz' bei einer CPU?",options:["A) Die Menge an Arbeitsspeicher","B) Die Anzahl der Taktzyklen pro Sekunde","C) Die Temperatur unter Last"],correct:1,feedback:"GHz = Gigahertz = Milliarden Taktzyklen pro Sekunde. 3 GHz bedeutet: 3.000.000.000 Arbeitsschritte pro Sekunde. Mehr Kerne sind oft wichtiger als höherer Takt."},
+      merksatz:"CPU = Gehirn des Computers – Kerne rechnen parallel, GHz misst die Taktgeschwindigkeit.",
+      glossary_terms:[{term:"CPU",full:"Central Processing Unit",def:"Hauptprozessor des Computers, führt alle Berechnungen aus.",merk:"Das Gehirn des Computers."},{term:"CPU-Cache",full:null,def:"Ultraschneller Zwischenspeicher direkt auf dem CPU-Chip (L1/L2/L3).",merk:null},{term:"GHz",full:"Gigahertz",def:"Einheit für die Taktfrequenz der CPU – Milliarden Zyklen pro Sekunde.",merk:null}]
+    }
+  ],
+  "Cloud & Infrastruktur": [
+    {
+      topic:"Container",full:"Container-Virtualisierung",category:"Cloud & Infrastruktur",
+      definition:"Ein Container ist eine isolierte, leichtgewichtige Laufzeitumgebung für Anwendungen – inklusive Code, Abhängigkeiten und Konfiguration. Container teilen sich den Kernel des Hosts, sind aber voneinander abgeschottet. Sie starten schneller und brauchen weniger Ressourcen als VMs.",
+      explanation:"Container sind wie Frachtcontainer: standardisiert verpackt und auf jedem Schiff (Server) lauffähig. Der Entwickler packt App und alle Bibliotheken rein – sie läuft identisch auf dem Laptop, Test-Server und in der Cloud. Docker ist das bekannteste Tool dafür.",
+      example:"Ein Team entwickelt eine Python-App. Lokal funktioniert sie, auf dem Server nicht – 'works on my machine'. Mit Docker packen sie App + Python-Version + Libraries in ein Image. Der Server startet denselben Container: identisches Verhalten garantiert. 'Works on my machine' wird zu 'works everywhere'.",
+      quiz:{question:"Was unterscheidet Container von virtuellen Maschinen?",options:["A) Container haben kein eigenes OS und teilen den Kernel des Hosts","B) Container sind langsamer aber sicherer","C) Container können nur unter Linux laufen"],correct:0,feedback:"VMs bringen ein komplettes Gast-OS mit. Container teilen den Host-Kernel – daher starten sie in Sekunden statt Minuten und brauchen deutlich weniger Speicher."},
+      merksatz:"Container packen eine App mit allem was sie braucht – und laufen überall gleich.",
+      glossary_terms:[{term:"Container",full:null,def:"Isolierte Laufzeitumgebung für Apps mit allen Abhängigkeiten, teilt den Host-Kernel.",merk:"Funktioniert überall gleich."},{term:"Docker",full:null,def:"Populärstes Tool zum Erstellen, Verteilen und Starten von Containern.",merk:null},{term:"Container-Image",full:null,def:"Unveränderliche Vorlage, aus der ein Container gestartet wird.",merk:null}]
+    },
+    {
+      topic:"Load Balancer",full:null,category:"Cloud & Infrastruktur",
+      definition:"Ein Load Balancer verteilt eingehende Anfragen gleichmäßig auf mehrere Server, um Überlastung zu verhindern. Er ist der unsichtbare Verteiler vor großen Web-Diensten. Ohne ihn würde ein einziger Server unter Last zusammenbrechen.",
+      explanation:"Stell dir eine Supermarktkasse vor: Einem Kassierer für 500 Kunden würde ich auch nicht in die Schlange stehen. Der Load Balancer ist der Einweiser, der Kunden gleichmäßig auf alle offenen Kassen verteilt. Fällt eine aus, leitet er automatisch um. Strategien: Round Robin, Least Connections, IP-Hash.",
+      example:"Netflix hat Millionen gleichzeitige Zuschauer. Kein einzelner Server könnte das stemmen. Load Balancer verteilen Traffic auf hunderte Server weltweit. Fällt einer aus, bemerkt du nichts – der Balancer leitet dich innerhalb von Millisekunden zum nächsten um.",
+      quiz:{question:"Was ist die Hauptaufgabe eines Load Balancers?",options:["A) Daten verschlüsseln","B) Traffic gleichmäßig auf mehrere Server verteilen","C) Backups erstellen"],correct:1,feedback:"Load Balancer sind primär für Lastverteilung und Hochverfügbarkeit zuständig. Verschlüsselung (TLS Termination) können manche auch – aber das ist eine Zusatzfunktion, nicht die Hauptaufgabe."},
+      merksatz:"Load Balancer = Einweiser im Supermarkt – verteilt Last, verhindert Stau.",
+      glossary_terms:[{term:"Load Balancer",full:null,def:"Verteilt eingehende Anfragen gleichmäßig auf mehrere Server.",merk:"Der Einweiser im digitalen Supermarkt."},{term:"Round Robin",full:null,def:"Load-Balancing-Strategie: Anfragen werden der Reihe nach auf Server verteilt.",merk:null},{term:"Hochverfügbarkeit",full:"High Availability",def:"Systemdesign das sicherstellt, dass ein Dienst trotz Serverausfall verfügbar bleibt.",merk:null}]
+    },
+    {
+      topic:"IaaS",full:"Infrastructure as a Service",category:"Cloud & Infrastruktur",
+      definition:"IaaS ist ein Cloud-Modell, bei dem Anbieter virtuelle Hardware über das Internet bereitstellen. Du mietest Server, Netzwerk und Speicher auf Abruf, statt eigene Hardware zu kaufen. AWS EC2, Azure VMs und Google Compute Engine sind typische Beispiele.",
+      explanation:"Drei Cloud-Modelle: IaaS gibt den leeren Server (du installierst alles selbst). PaaS gibt die Plattform (du deployest nur Code). SaaS gibt fertige Software (du nutzt nur). IaaS = maximale Kontrolle, maximaler Aufwand. Vorteil: nur zahlen was du nutzt, skalieren in Minuten.",
+      example:"Ein Startup braucht Server für seinen Launch. Statt 50.000€ für physische Hardware zu investieren, mietet es bei AWS 10 EC2-Instanzen für 0,10€/Stunde. Launch läuft gut, Traffic steigt: In 5 Minuten laufen 50 Instanzen. Launch vorbei: zurück auf 2. Kein gebundenes Kapital, keine Wartung.",
+      quiz:{question:"Was unterscheidet IaaS von SaaS?",options:["A) Bei IaaS mietest du Infrastruktur und verwaltest selbst, bei SaaS nutzt du fertige Software","B) IaaS ist immer teurer","C) SaaS läuft nur lokal, IaaS in der Cloud"],correct:0,feedback:"IaaS, PaaS und SaaS unterscheiden sich im Abstraktionsgrad: Je höher, desto weniger verwaltest du selbst. IaaS = niedrigster Level (du verwaltest alles bis zum OS), SaaS = höchster Level (du öffnest nur die App)."},
+      merksatz:"IaaS = gemietete Infrastruktur auf Abruf – du verwaltest, der Anbieter betreibt die Hardware.",
+      glossary_terms:[{term:"IaaS",full:"Infrastructure as a Service",def:"Cloud-Modell: gemietete virtuelle Hardware, die du selbst konfigurierst.",merk:"Gemieteter leerer Server in der Cloud."},{term:"PaaS",full:"Platform as a Service",def:"Cloud-Modell: Plattform zum Deployen von Code, ohne OS verwalten zu müssen.",merk:null},{term:"SaaS",full:"Software as a Service",def:"Cloud-Modell: fertige Software, die direkt genutzt wird (z. B. Gmail, Salesforce).",merk:null}]
+    }
+  ],
+  "Programmierung & Logik": [
+    {
+      topic:"API",full:"Application Programming Interface",category:"Programmierung & Logik",
+      definition:"Eine API ist eine definierte Schnittstelle, über die Programme miteinander kommunizieren. Sie legt fest, welche Anfragen gestellt werden können und wie Antworten aussehen. APIs ermöglichen die Nutzung fremder Dienste, ohne deren internen Code zu kennen.",
+      explanation:"Eine API ist wie die Speisekarte eines Restaurants: Du weißt was du bestellen kannst und in welcher Form es kommt – was in der Küche passiert, siehst du nicht. Dein Code schickt eine HTTP-Anfrage, die API antwortet mit strukturierten Daten (JSON). Keine Kenntnis der internen Logik nötig.",
+      example:"Eine App zeigt das Wetter an. Statt eigene Satelliten zu betreiben, ruft sie die OpenWeatherMap-API auf: GET /weather?q=Berlin. Die API antwortet mit JSON: {temp: 18, desc: 'bewölkt'}. Gesamte Wetterkompetenz kommt von außen – über eine definierte Schnittstelle.",
+      quiz:{question:"Was ist der Hauptvorteil einer API für Entwickler?",options:["A) Sie macht Programme automatisch schneller","B) Sie ermöglicht die Nutzung fremder Dienste ohne Kenntnis ihrer internen Logik","C) Sie ersetzt Datenbanken"],correct:1,feedback:"APIs abstrahieren Komplexität weg. Du nutzt einen Dienst über eine klare Schnittstelle – ohne wissen zu müssen, wie er intern funktioniert. Das ist das Herzstück moderner Software-Entwicklung."},
+      merksatz:"Eine API ist die Speisekarte: Du weißt was du kriegen kannst – aber nicht wie es gekocht wird.",
+      glossary_terms:[{term:"API",full:"Application Programming Interface",def:"Definierte Schnittstelle zur Kommunikation zwischen Programmen.",merk:"Die Speisekarte zwischen Programmen."},{term:"JSON",full:"JavaScript Object Notation",def:"Leichtgewichtiges Textformat zum Austausch strukturierter Daten.",merk:null},{term:"HTTP",full:"Hypertext Transfer Protocol",def:"Protokoll für Datenübertragung im Web, Grundlage der meisten APIs.",merk:null}]
+    },
+    {
+      topic:"Algorithmen",full:null,category:"Programmierung & Logik",
+      definition:"Ein Algorithmus ist eine präzise, endliche Folge von Anweisungen zur Lösung eines Problems. Jedes Programm basiert auf Algorithmen. Sie beschreiben nicht nur was gemacht werden soll, sondern exakt wie und in welcher Reihenfolge.",
+      explanation:"Stell dir ein Kochrezept vor: Schritt 1, Schritt 2, Schritt 3 – am Ende steht ein Ergebnis. Ein Algorithmus ist dasselbe für Computer. Qualität misst sich an Korrektheit (richtiges Ergebnis?) und Effizienz (wie schnell, wie viel Speicher?). Ein schlechter Algorithmus kann aus einer 1-Sekunden-Aufgabe eine 10-Stunden-Aufgabe machen.",
+      example:"Du suchst 'Müller' in 1 Million Namen. Linearer Algorithmus: jeden Namen prüfen – bis zu 1 Mio. Vergleiche. Binäre Suche (bei sortierter Liste): immer in der Mitte teilen – fertig in max. 20 Vergleichen. Gleicher Computer, gleiche Aufgabe, Faktor 50.000 schneller.",
+      quiz:{question:"Was ist die wichtigste Eigenschaft eines guten Algorithmus?",options:["A) Er muss in Python geschrieben sein","B) Er muss korrekt und effizient sein","C) Er muss für Menschen leicht lesbar sein"],correct:1,feedback:"Lesbarkeit ist wünschenswert, aber nicht das Hauptkriterium. Korrektheit (liefert er das richtige Ergebnis?) und Effizienz (braucht er wenig Zeit und Speicher?) sind die entscheidenden Maßstäbe."},
+      merksatz:"Ein Algorithmus ist ein Kochrezept für Computer – Schritt für Schritt zum richtigen Ergebnis.",
+      glossary_terms:[{term:"Algorithmus",full:null,def:"Endliche, präzise Folge von Anweisungen zur Lösung eines Problems.",merk:"Das Kochrezept für Computer."},{term:"Binäre Suche",full:null,def:"Effizienter Suchalgorithmus, der eine sortierte Liste durch wiederholtes Halbieren durchsucht.",merk:null},{term:"Zeitkomplexität",full:"Big-O-Notation",def:"Maß für die Effizienz eines Algorithmus in Abhängigkeit von der Eingabegröße.",merk:null}]
+    },
+    {
+      topic:"Variablen & Datentypen",full:null,category:"Programmierung & Logik",
+      definition:"Eine Variable ist ein benannter Speicherplatz, der einen Wert enthält, der sich ändern kann. Jede Variable hat einen Datentyp, der festlegt, welche Art von Wert sie speichert. Die häufigsten: Integer, Float, String, Boolean.",
+      explanation:"Variablen sind beschriftete Schachteln. 'alter = 25' legt eine Schachtel namens 'alter' an und legt 25 rein. Der Datentyp entscheidet, welche Schachtelart: Integer-Schachtel für ganze Zahlen, String-Schachtel für Text. Python wählt den Typ automatisch, Java/C++ wollen ihn explizit.",
+      example:"Ein Login-System: username = 'Marcel' (String), loginVersuche = 3 (Integer), istAngemeldet = false (Boolean), kontostand = 1234.56 (Float). Bei loginVersuche > 3 wird istAngemeldet auf false gesetzt und der Account gesperrt. Vier Variablen, vier Typen, ein simples Sicherheitssystem.",
+      quiz:{question:"Welcher Datentyp speichert genau die Werte 'true' oder 'false'?",options:["A) Integer","B) String","C) Boolean"],correct:2,feedback:"Ein Boolean kennt nur zwei Zustände: wahr oder falsch (true/false, 1/0). Er ist perfekt für Ja/Nein-Entscheidungen in Programmen – wie 'istAngemeldet' oder 'hatBezahlt'."},
+      merksatz:"Variablen sind beschriftete Schachteln – der Datentyp bestimmt, was reinpasst.",
+      glossary_terms:[{term:"Variable",full:null,def:"Benannter Speicherplatz in einem Programm, der einen Wert enthält.",merk:"Beschriftete Schachtel für Daten."},{term:"Boolean",full:null,def:"Datentyp mit genau zwei Werten: true oder false.",merk:null},{term:"Integer",full:null,def:"Datentyp für ganze Zahlen ohne Komma.",merk:null},{term:"String",full:null,def:"Datentyp für Zeichenketten (Text).",merk:null}]
+    }
+  ],
+  "Datenverwaltung": [
+    {
+      topic:"SQL",full:"Structured Query Language",category:"Datenverwaltung",
+      definition:"SQL ist die Standardsprache zum Abfragen und Bearbeiten von Daten in relationalen Datenbanken. Mit SQL kannst du Daten lesen (SELECT), einfügen (INSERT), aktualisieren (UPDATE) und löschen (DELETE). Sie wird von MySQL, PostgreSQL, SQLite und MSSQL verstanden.",
+      explanation:"Stell dir eine Datenbank als geordnete Excel-Datei mit verknüpften Tabellen vor. SQL ist die Sprache, mit der du sie befragst. 'SELECT name FROM nutzer WHERE aktiv = 1' heißt: Zeig mir alle Namen aktiver Nutzer. Die Datenbank findet das blitzschnell – auch bei Millionen Einträgen.",
+      example:"Ein Support-Team will alle offenen Tickets von heute sehen: SELECT id, betreff, priorität FROM tickets WHERE status = 'offen' AND datum = CURDATE() ORDER BY priorität DESC. In Millisekunden liefert die DB die sortierten Ergebnisse. Kein Export, kein manuelles Durchsuchen.",
+      quiz:{question:"Was macht der SQL-Befehl SELECT?",options:["A) Er löscht Datensätze aus einer Tabelle","B) Er liest Daten aus einer oder mehreren Tabellen","C) Er erstellt eine neue Datenbank"],correct:1,feedback:"SELECT ist der häufigste SQL-Befehl – er liest Daten, verändert aber nichts. Für Änderungen: UPDATE. Für Löschen: DELETE. Für neue Einträge: INSERT."},
+      merksatz:"SQL: SELECT holt, INSERT schreibt, UPDATE ändert, DELETE löscht.",
+      glossary_terms:[{term:"SQL",full:"Structured Query Language",def:"Standardsprache zum Abfragen und Verwalten relationaler Datenbanken.",merk:"SELECT, INSERT, UPDATE, DELETE."},{term:"SELECT",full:null,def:"SQL-Befehl zum Lesen von Daten aus einer Tabelle.",merk:null},{term:"Relationale Datenbank",full:null,def:"Datenbanksystem mit strukturierten, verknüpften Tabellen.",merk:null}]
+    },
+    {
+      topic:"NoSQL",full:"Not Only SQL",category:"Datenverwaltung",
+      definition:"NoSQL-Datenbanken speichern Daten ohne festes Tabellenschema – in Dokumenten, Schlüssel-Wert-Paaren, Graphen oder Spalten. Sie sind flexibler und bei bestimmten Szenarien skalierbarer als relationale Datenbanken. Der Name bedeutet 'Not only SQL', nicht 'kein SQL'.",
+      explanation:"SQL-Datenbanken sind wie Excel: feste Spalten, jede Zeile muss passen. NoSQL ist wie ein Aktenstapel: Jedes Dokument kann anders aussehen. Ein Nutzerdokument in MongoDB könnte 3 oder 15 Felder haben – kein Problem. Ideal für schnell ändernde Strukturen und horizontale Skalierung.",
+      example:"Twitter speichert Tweets in Cassandra (NoSQL). Jeder Tweet kann unterschiedliche Metadaten haben – Bild, Video, Poll, Ort oder keines davon. Ein fixes SQL-Schema für alle Kombinationen wäre unpraktisch. Cassandra verteilt Daten automatisch auf hunderte Server und ist für Millionen Writes pro Sekunde ausgelegt.",
+      quiz:{question:"Wann ist NoSQL SQL oft vorzuziehen?",options:["A) Bei streng strukturierten Finanzdaten mit komplexen Beziehungen","B) Bei flexiblen, schnell wachsenden oder unstrukturierten Massendaten","C) Wenn man SQL-Abfragen schreiben möchte"],correct:1,feedback:"Relationale Datenbanken sind stärker bei komplexen Joins und strenger Konsistenz (Finanzdaten). NoSQL gewinnt bei Flexibilität, horizontaler Skalierung und sehr hohem Schreibvolumen."},
+      merksatz:"NoSQL = flexibles Schema – ideal wenn die Datenstruktur sich oft ändert oder massiv skaliert.",
+      glossary_terms:[{term:"NoSQL",full:"Not Only SQL",def:"Datenbankmodell ohne festes Schema, z. B. Dokument-, Key-Value- oder Graph-Datenbanken.",merk:"Flexibel und horizontal skalierbar."},{term:"MongoDB",full:null,def:"Populäre dokumentenbasierte NoSQL-Datenbank, speichert Daten als JSON-ähnliche Dokumente.",merk:null},{term:"Horizontale Skalierung",full:"Scale Out",def:"Kapazitätserweiterung durch mehr Server statt stärkerer Hardware.",merk:null}]
+    },
+    {
+      topic:"Backup-Strategien",full:null,category:"Datenverwaltung",
+      definition:"Eine Backup-Strategie legt fest, wie, wie oft und wo Datenkopien gespeichert werden. Die 3-2-1-Regel ist Industriestandard: 3 Kopien, auf 2 unterschiedlichen Medientypen, 1 davon außer Haus. Backups sind wertlos, wenn sie nie getestet wurden.",
+      explanation:"Drei Backup-Arten: Vollbackup (alles, langsam, groß). Differenziell (alles seit letztem Vollbackup). Inkrementell (nur Änderungen seit letztem Backup, klein, aber Wiederherstellung aufwändiger). Profis kombinieren: wöchentliches Vollbackup + tägliche Inkremente.",
+      example:"Ein Unternehmen wird von Ransomware befallen – alle Daten verschlüsselt. Ohne Backup: Lösegeld zahlen oder Datenverlust. Mit Backup auf demselben Server: auch verschlüsselt. Mit 3-2-1: Offline-Backup ist sauber, Wiederherstellung dauert Stunden statt Totalverlust.",
+      quiz:{question:"Was besagt die 3-2-1-Backup-Regel?",options:["A) Täglich 3 Backups, 2 Stunden Aufbewahrung, 1 Test pro Monat","B) 3 Kopien, auf 2 Medientypen, 1 davon extern gelagert","C) 3 Server, 2 Clouds, 1 lokales Laufwerk"],correct:1,feedback:"3-2-1 ist ein medienagnostisches Prinzip: 3 Kopien (Original + 2 Backups), 2 verschiedene Medien (z. B. SSD + Cloud), 1 außer Haus (Schutz vor lokalem Disaster)."},
+      merksatz:"3-2-1: drei Kopien, zwei Medien, eine außer Haus – und: untestete Backups sind keine Backups.",
+      glossary_terms:[{term:"3-2-1-Regel",full:null,def:"Backup-Standard: 3 Kopien, 2 Medientypen, 1 Standort außer Haus.",merk:"Drei-Zwei-Eins – und testen."},{term:"Ransomware",full:null,def:"Schadsoftware, die Daten verschlüsselt und Lösegeld für die Entschlüsselung fordert.",merk:null},{term:"Inkrementelles Backup",full:null,def:"Backup, das nur Änderungen seit dem letzten Backup sichert – schnell, aber aufwändiger bei Wiederherstellung.",merk:null}]
+    }
+  ]
+};
+
+// ═══════════════════════════════════════════════════════════
+// FETCH LAYER  –  einziger Entry Point für Briefing-Daten
+// Mock und API folgen identischem Schema → austauschbar
+// ═══════════════════════════════════════════════════════════
+
+/** Wählt das passende Mock-Briefing basierend auf Tag und Kategorie */
+function getMockBriefing(state) {
+  const cat = CATEGORIES[(state.day - 1) % CATEGORIES.length];
+  const catMocks = MOCKS[cat];
+  // Wie oft war diese Kategorie bereits dran?
+  const round = Math.floor((state.day - 1) / CATEGORIES.length);
+  const idx = round % catMocks.length;
+  return new Promise(resolve =>
+    setTimeout(() => resolve(JSON.parse(JSON.stringify(catMocks[idx]))), 800)
+  );
+}
+
+/** Ruft ein Briefing per Anthropic API ab */
+async function getApiBriefing(state) {
+  const cat = CATEGORIES[(state.day - 1) % CATEGORIES.length];
+  const doneTopics = state.history.map(h => h.topic).join(", ") || "keine";
+
+  const systemPrompt = `Du bist ein IT-Lern-Assistent. Antworte AUSSCHLIESSLICH mit validem JSON – kein Markdown, keine Backticks, keine Erklärungen.
+
+Aktueller Stand:
+- Tag: ${state.day}
+- Heutige Kategorie: ${cat}
+- Bereits behandelte Themen: ${doneTopics}
+- Wähle ein NEUES Thema aus "${cat}", das noch nicht behandelt wurde.
+
+Antworte auf Deutsch mit exakt diesem JSON-Schema:
+{
+  "topic": "Kurzname",
+  "full": "Ausgeschriebener Name oder null",
+  "category": "${cat}",
+  "definition": "2-3 Sätze für IT-Einsteiger",
+  "explanation": "3-5 Sätze mit Analogie",
+  "example": "2-4 Sätze konkretes Praxisbeispiel",
+  "quiz": {
+    "question": "Eine Frage zum Thema",
+    "options": ["A) ...", "B) ...", "C) ..."],
+    "correct": 1,
+    "feedback": "1-2 Sätze zur richtigen Antwort"
+  },
+  "merksatz": "Ein einprägsamer Satz",
+  "glossary_terms": [
+    { "term": "...", "full": "... oder null", "def": "1 Satz", "merk": "Merksatz oder null" }
+  ]
+}`;
+
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": state.apiKey,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: "user", content: "Starte Briefing Tag " + state.day + "." }]
+    })
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || "API-Fehler " + resp.status);
+  }
+  const data = await resp.json();
+  const text = data.content.map(b => b.text || "").join("");
+  const clean = text.replace(/```json|```/g, "").trim();
+  return JSON.parse(clean);
+}
+
+/**
+ * Hauptfunktion – Modus wird hier entschieden.
+ * Beide Pfade liefern identisches Schema → Rest der App ist modusblind.
+ */
+async function fetchBriefing(state) {
+  if (state.useApi && state.apiKey) {
+    return getApiBriefing(state);
+  }
+  return getMockBriefing(state);
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+function defaultState() {
+  return { day: 1, history: [], glossary: [], currentBriefing: null,
+           quizAnswered: false, quizCorrect: null, selectedAnswer: null,
+           apiKey: "", useApi: false };
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return { ...defaultState(), ...JSON.parse(raw) };
+  } catch(e) {}
+  return defaultState();
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch(e) {}
+}
+
+let S = loadState();
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function esc(s) {
+  return (s||"").replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+}
+function catColor(cat) { return CAT_COLORS[cat] || "#999"; }
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+function updateNavBadges() {
+  document.getElementById("nav-day").textContent = "Tag " + S.day;
+  const mb = document.getElementById("mode-badge");
+  if (S.useApi && S.apiKey) {
+    mb.textContent = "API"; mb.className = "mode-badge api";
+  } else {
+    mb.textContent = "MOCK"; mb.className = "mode-badge mock";
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// BRIEFING PAGE
+// ═══════════════════════════════════════════════════════════
+function renderBriefing() {
+  updateNavBadges();
+  const el = document.getElementById("page-briefing");
+
+  if (!S.currentBriefing) {
+    const cat = CATEGORIES[(S.day - 1) % CATEGORIES.length];
+    const col = catColor(cat);
+    const done = S.history.length;
+    const pct = Math.min(100, Math.round(done / 21 * 100));
+    el.innerHTML = `
+      <div class="start-box">
+        <div class="start-day">${String(S.day).padStart(2,"0")}<span>Bereit für heute?</span></div>
+        <div class="start-cat">Kategorie: <strong style="color:${col}">${esc(cat)}</strong></div>
+        <div style="max-width:260px;margin:0 auto 28px">
+          <div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
+          <div style="font-size:12px;color:var(--ink-soft);text-align:center">${done} von 21 Mock-Briefings abgeschlossen</div>
+        </div>
+        <button class="btn-primary" id="start-btn">Briefing starten</button>
+      </div>`;
+    document.getElementById("start-btn").onclick = startBriefing;
+    return;
+  }
+
+  const b = S.currentBriefing;
+  const col = catColor(b.category);
+  const answered = S.quizAnswered;
+
+  let quizHtml = `<div class="quiz-options">`;
+  b.quiz.options.forEach((opt, i) => {
+    let cls = "quiz-opt";
+    if (answered) {
+      if (i === b.quiz.correct) cls += " correct";
+      else if (i === S.selectedAnswer) cls += " wrong";
+      else cls += " dimmed";
+    }
+    quizHtml += `<button class="${cls}" data-idx="${i}" ${answered?"disabled":""}>${esc(opt)}</button>`;
+  });
+  quizHtml += `</div>`;
+  if (answered) {
+    const ok = S.quizCorrect;
+    quizHtml += `<div class="quiz-feedback ${ok?"ok":"err"}">${ok?"✓ Richtig!":"✗ Leider falsch."} ${esc(b.quiz.feedback)}</div>
+      <div class="weiter-wrap"><button class="btn-weiter" id="weiter-btn">Zum nächsten Tag →</button></div>`;
+  }
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-label">Tag ${S.day} · ${esc(b.category)}</div>
+      <div class="card-title">${esc(b.topic)}<span class="cursor"></span></div>
+      ${b.full ? `<div class="card-full">${esc(b.full)}</div>` : ""}
+      <div class="cat-chip" style="background:${col}20;color:${col}">
+        <span class="dot" style="background:${col}"></span>${esc(b.category)}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">🔍 Was ist es?</div>
+      <div class="section-text">${esc(b.definition)}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">🧠 Wie funktioniert es?</div>
+      <div class="section-text">${esc(b.explanation)}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">⚙️ Praxisbeispiel</div>
+      <div class="section-text">${esc(b.example)}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">❓ Wissensfrage</div>
+      <div class="section-text" style="font-weight:600;margin-bottom:14px">${esc(b.quiz.question)}</div>
+      ${quizHtml}
+    </div>
+    <div class="card">
+      <div class="card-label">💡 Merksatz</div>
+      <div class="merksatz">${esc(b.merksatz)}</div>
+    </div>`;
+
+  if (!answered) {
+    document.querySelectorAll(".quiz-opt").forEach(btn =>
+      btn.onclick = () => answerQuiz(parseInt(btn.dataset.idx))
+    );
+  } else {
+    const wb = document.getElementById("weiter-btn");
+    if (wb) wb.onclick = advanceDay;
+  }
+}
+
+async function startBriefing() {
+  const el = document.getElementById("page-briefing");
+  el.innerHTML = `<div class="loading"><div class="spinner"></div> Briefing wird geladen…</div>`;
+  try {
+    const briefing = await fetchBriefing(S);
+    S.currentBriefing = briefing;
+    S.quizAnswered = false; S.quizCorrect = null; S.selectedAnswer = null;
+    saveState();
+    renderBriefing();
+  } catch(e) {
+    el.innerHTML = `<div class="card" style="border-left:4px solid #c62828">
+      <div class="card-label" style="color:#c62828">Fehler beim Laden</div>
+      <div class="section-text">${esc(e.message)}</div>
+      <div style="margin-top:14px"><button class="btn-primary" onclick="renderBriefing()">Zurück</button></div>
+    </div>`;
+  }
+}
+
+function answerQuiz(idx) {
+  S.selectedAnswer = idx;
+  S.quizAnswered = true;
+  S.quizCorrect = (idx === S.currentBriefing.quiz.correct);
+  saveState();
+  renderBriefing();
+}
+
+function advanceDay() {
+  const b = S.currentBriefing;
+  S.history.push({ day: S.day, topic: b.topic, category: b.category });
+  (b.glossary_terms || []).forEach(t => {
+    if (!S.glossary.find(g => g.term === t.term)) {
+      S.glossary.push({ ...t, day: S.day, category: b.category });
+    }
+  });
+  S.day += 1;
+  S.currentBriefing = null;
+  S.quizAnswered = false; S.quizCorrect = null; S.selectedAnswer = null;
+  saveState();
+  renderBriefing();
+  showToast("Glossar aktualisiert ✓");
+}
+
+// ═══════════════════════════════════════════════════════════
+// GLOSSAR PAGE
+// ═══════════════════════════════════════════════════════════
+let gQuery = "", gCat = "__all";
+function renderGlossar() {
+  const el = document.getElementById("page-glossar");
+  const q = gQuery.toLowerCase();
+  const shown = S.glossary
+    .filter(t => gCat === "__all" || t.category === gCat)
+    .filter(t => !q || (t.term + " " + (t.full||"") + " " + t.def).toLowerCase().includes(q))
+    .sort((a,b) => a.term.localeCompare(b.term, "de"));
+
+  const chips = `<button class="glos-chip ${gCat==="__all"?"all-on":""}" data-cat="__all">Alle (${S.glossary.length})</button>` +
+    CATEGORIES.map(c => {
+      const cnt = S.glossary.filter(t => t.category === c).length;
+      if (!cnt) return "";
+      return `<button class="glos-chip ${gCat===c?"on":""}" data-cat="${c}">
+        <span style="width:8px;height:8px;border-radius:50%;background:${catColor(c)};display:inline-block"></span>${c} (${cnt})</button>`;
+    }).join("");
+
+  const cards = shown.length
+    ? shown.map(t => `
+      <div class="gterm" style="--cat-color:${catColor(t.category)}">
+        <div class="gterm-top">
+          <div><div class="gterm-name">${esc(t.term)}</div>${t.full?`<div class="gterm-full">${esc(t.full)}</div>`:""}</div>
+          <div class="gterm-day">Tag ${t.day}</div>
+        </div>
+        <div class="gterm-def">${esc(t.def)}</div>
+        ${t.merk?`<div class="gterm-merk">${esc(t.merk)}</div>`:""}
+      </div>`).join("")
+    : `<div class="glos-empty">${S.glossary.length===0
+        ? "Noch keine Begriffe. Schließe dein erstes Briefing ab."
+        : "Keine Treffer."}</div>`;
+
+  el.innerHTML = `
+    <h2 style="font-size:22px;font-weight:800;margin-bottom:20px">
+      Glossar <span style="font-family:var(--mono);font-size:16px;color:var(--ink-soft)">(${S.glossary.length} Begriffe)</span>
+    </h2>
+    <div class="glos-controls">
+      <input class="glos-search" placeholder="Begriff suchen…" value="${esc(gQuery)}">
+    </div>
+    <div class="glos-chips">${chips}</div>
+    <div>${cards}</div>`;
+
+  el.querySelector(".glos-search").oninput = e => {
+    gQuery = e.target.value;
+    const p = e.target.selectionStart;
+    renderGlossar();
+    el.querySelector(".glos-search").focus();
+    el.querySelector(".glos-search").setSelectionRange(p, p);
+  };
+  el.querySelectorAll(".glos-chip").forEach(ch =>
+    ch.onclick = () => { gCat = ch.dataset.cat; renderGlossar(); }
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// SETTINGS PAGE
+// ═══════════════════════════════════════════════════════════
+function renderSettings() {
+  const el = document.getElementById("page-settings");
+  el.innerHTML = `
+    <h2 style="font-size:22px;font-weight:800;margin-bottom:24px">Einstellungen</h2>
+
+    <div class="stat-row">
+      <div class="stat"><b>${S.day}</b><span>Aktueller Tag</span></div>
+      <div class="stat"><b>${S.history.length}</b><span>Briefings</span></div>
+      <div class="stat"><b>${S.glossary.length}</b><span>Glossar</span></div>
+    </div>
+
+    <div class="card settings-group" style="margin-top:16px">
+      <div class="settings-label">Modus</div>
+      <div class="toggle-row" style="border-bottom:none">
+        <div>
+          <div style="font-weight:600">API-Modus</div>
+          <div style="font-size:13px;color:var(--ink-soft);margin-top:3px">Echte Claude-Antworten statt Mock-Daten</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-api" ${S.useApi?"checked":""}>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <p class="settings-hint" style="margin-top:8px">
+        <strong>Mock-Modus:</strong>ng> 21 vorgefertigte Briefings (3 Runden × 7 Kategorien), danach Wiederholung. Kein Key nötig.<br>
+        <strong>API-Modus:</strong> Claude generiert täglich neue, einzigartige Briefings. Benötigt API-Key.
+      </p>
+    </div>
+
+    <div class="card settings-group" id="api-section" style="${S.useApi?"":"opacity:.5;pointer-events:none"}">
+      <div class="settings-label">Anthropic API-Key</div>
+      <input class="settings-input" type="password" id="api-key-input"
+             placeholder="sk-ant-api03-…" value="${esc(S.apiKey)}">
+      <p class="settings-hint">Zu finden unter <strong>console.anthropic.com → API Keys</strong>. Model: claude-sonnet-4-6.</p>
+      <div class="settings-warn">
+        ⚠️ Der Key wird nur lokal in deinem Browser gespeichert (localStorage).
+        Nur auf privaten, vertrauenswürdigen Geräten verwenden.
+      </div>
+      <div class="settings-row">
+        <button class="btn-secondary" id="save-key">Key speichern</button>
+        <button class="btn-danger" id="clear-key">Key löschen</button>
+      </div>
+    </div>
+
+    <div class="card settings-group">
+      <div class="settings-label">Fortschritt</div>
+      <div class="settings-row">
+        <button class="btn-danger" id="reset-btn">Fortschritt zurücksetzen</button>
+      </div>
+      <p class="settings-hint" style="margin-top:8px">Setzt Tag, Verlauf und Glossar zurück. API-Key und Modus-Einstellung bleiben erhalten.</p>
+    </div>`;
+
+  document.getElementById("toggle-api").onchange = e => {
+    S.useApi = e.target.checked;
+    saveState();
+    updateNavBadges();
+    document.getElementById("api-section").style.cssText = S.useApi ? "" : "opacity:.5;pointer-events:none";
+  };
+  document.getElementById("save-key").onclick = () => {
+    S.apiKey = document.getElementById("api-key-input").value.trim();
+    saveState();
+    updateNavBadges();
+    showToast("API-Key gespeichert ✓");
+  };
+  document.getElementById("clear-key").onclick = () => {
+    S.apiKey = "";
+    document.getElementById("api-key-input").value = "";
+    saveState();
+    updateNavBadges();
+    showToast("Key gelöscht");
+  };
+  document.getElementById("reset-btn").onclick = () => {
+    if (!confirm("Fortschritt wirklich zurücksetzen?\nTag, Verlauf und Glossar werden gelöscht.\nKey und Modus bleiben erhalten.")) return;
+    const { apiKey, useApi } = S;
+    S = { ...defaultState(), apiKey, useApi };
+    saveState();
+    renderSettings();
+    renderBriefing();
+    showToast("Fortschritt zurückgesetzt");
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════
+function initTabs() {
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("page-" + btn.dataset.tab).classList.add("active");
+      if (btn.dataset.tab === "glossar") renderGlossar();
+      if (btn.dataset.tab === "settings") renderSettings();
+    };
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════
+initTabs();
+renderBriefing();
+</script>
+</body>
+</html>
